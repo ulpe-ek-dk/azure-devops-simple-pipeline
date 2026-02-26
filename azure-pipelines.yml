@@ -101,7 +101,7 @@ stages:
           steps:
           - task: AzureWebApp@1
             inputs:
-              azureSubscription: 'din-azure-subscription'
+              azureSubscription: 'ManagedIdentity1'
               appType: 'webAppLinux'
               appName: 'devsecops-demo-api'
               package: '$(System.DefaultWorkingDirectory)'
