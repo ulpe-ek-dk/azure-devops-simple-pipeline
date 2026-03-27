@@ -1,0 +1,1 @@
+Simpel CI/CD pipeline til demo af Azure DevOps CI/CD
