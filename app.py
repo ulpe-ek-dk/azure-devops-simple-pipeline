@@ -13,7 +13,7 @@ def hent_vindmoeller():
     return jsonify(vindmoeller)
 
 @app.route('/api/vindmoeller/<int:id>', methods=['GET'])
-def hent_vindmoeller(id):
+def hent_vindmoelle(id):
     vindmoelle = next((p for p in vindmoeller if p["id"] == id), None)
     if vindmoelle:
         return jsonify(vindmoelle)
@@ -25,9 +25,9 @@ def opret_vindmoelle():
     ny_vindmoelle = {
         "id": len(vindmoeller) + 1,
         "navn": data["navn"],
-        "pris": data["MW"]
+        "MW": data["MW"]
     }
-    produkter.append(ny_vindmoelle)
+    vindmoeller.append(ny_vindmoelle)
     return jsonify(ny_vindmoelle), 201
 
 if __name__ == '__main__':
