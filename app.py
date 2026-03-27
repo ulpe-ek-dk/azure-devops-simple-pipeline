@@ -4,7 +4,7 @@ app = Flask(__name__)
 
 # Simpel in-memory database til demo
 vindmoeller = [
-    {"id": 1, "navn": "Vestas 1", "MW": 1,8},
+    {"id": 1, "navn": "Vestas 1", "MW": 1.8},
     {"id": 2, "navn": "Vestas 2", "MW": 3},
 ]
 
