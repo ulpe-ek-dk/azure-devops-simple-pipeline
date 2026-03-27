@@ -106,4 +106,4 @@ stages:
               appType: 'webAppLinux'
               appName: 'devsecops-demo-api'
               package: '$(System.DefaultWorkingDirectory)'
-              startUpCommand: 'gunicorn --bind=0.0.0.0:8000 app:app'
+              startupCommand: 'gunicorn --bind=0.0.0.0:8000 app:app'
