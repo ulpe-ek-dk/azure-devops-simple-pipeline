@@ -115,14 +115,28 @@ stages:
         deploy:
           steps:
           - task: AzureCLI@2
-            displayName: 'Opret Web App hvis den ikke eksisterer'
+            displayName: 'Opret App Service Plan og Web App hvis de ikke eksisterer'
             inputs:
               azureSubscription: 'ManagedIdentity1'
               scriptType: 'bash'
               scriptLocation: 'inlineScript'
               inlineScript: |
-                exists=$(az webapp list --resource-group DevSecOpsDemo --query "[?name=='devsecops-demo-api'].name" -o tsv)
-                if [ -z "$exists" ]; then
+                # Opret App Service Plan hvis den ikke eksisterer
+                plan_exists=$(az appservice plan list --resource-group DevSecOpsDemo --query "[?name=='DevSecOpsDemo-plan'].name" -o tsv)
+                if [ -z "$plan_exists" ]; then
+                  echo "App Service Plan eksisterer ikke - opretter den..."
+                  az appservice plan create \
+                    --name DevSecOpsDemo-plan \
+                    --resource-group DevSecOpsDemo \
+                    --sku F1 \
+                    --is-linux
+                else
+                  echo "App Service Plan eksisterer allerede - springer over..."
+                fi
+
+                # Opret Web App hvis den ikke eksisterer
+                app_exists=$(az webapp list --resource-group DevSecOpsDemo --query "[?name=='devsecops-demo-api'].name" -o tsv)
+                if [ -z "$app_exists" ]; then
                   echo "Web App eksisterer ikke - opretter den..."
                   az webapp create \
                     --name devsecops-demo-api \
