@@ -1,7 +1,7 @@
 trigger:
   - main
+  - feature/bicep-infrastruktur
 
-# Bruger Microsoft-hosted agent (skiftet fra self-hosted 'MacBook-Agent')
 pool:
   vmImage: 'ubuntu-latest'
 
@@ -27,7 +27,7 @@ stages:
         detect-secrets scan > .secrets.baseline
         detect-secrets audit .secrets.baseline
       displayName: 'Scan efter secrets'
-      continueOnError: true  # Sæt til false i produktion!
+      continueOnError: true
 
 # ─────────────────────────────
 # STAGE 2: SAST
@@ -50,7 +50,7 @@ stages:
         bandit -r app.py -f json -o bandit-rapport.json
         bandit -r app.py
       displayName: 'Kør SAST scan'
-      continueOnError: true  # Sæt til false i produktion!
+      continueOnError: true
 
     - task: PublishBuildArtifacts@1
       inputs:
@@ -59,11 +59,34 @@ stages:
       displayName: 'Gem sikkerhedsrapport'
 
 # ─────────────────────────────
-# STAGE 3: BUILD OG TEST
+# STAGE 3: IaC - INFRASTRUKTUR
+# ─────────────────────────────
+- stage: Infrastruktur
+  displayName: 'IaC - Provisionér med Bicep'
+  dependsOn: SAST
+  jobs:
+  - job: BicepDeploy
+    displayName: 'Deploy Bicep skabelon'
+    steps:
+    - checkout: self
+    - task: AzureCLI@2
+      displayName: 'Kør Bicep deployment'
+      inputs:
+        azureSubscription: 'ManagedIdentity1'
+        scriptType: 'bash'
+        scriptLocation: 'inlineScript'
+        inlineScript: |
+          az deployment group create \
+            --resource-group DevSecOpsDemo \
+            --template-file infra/main.bicep
+
+# ─────────────────────────────
+# STAGE 4: BUILD OG TEST
 # ─────────────────────────────
 - stage: BuildOgTest
   displayName: 'Build og Test'
-  dependsOn: SAST
+  dependsOn:
+    - Infrastruktur
   jobs:
   - job: Test
     displayName: 'Kør unit tests'
@@ -101,7 +124,7 @@ stages:
       displayName: 'Publicer artifact'
 
 # ─────────────────────────────
-# STAGE 4: DEPLOY
+# STAGE 5: DEPLOY
 # ─────────────────────────────
 - stage: Deploy
   displayName: 'Deploy til Azure App Service'
@@ -114,39 +137,8 @@ stages:
       runOnce:
         deploy:
           steps:
-          - task: AzureCLI@2
-            displayName: 'Opret App Service Plan og Web App hvis de ikke eksisterer'
-            inputs:
-              azureSubscription: 'ManagedIdentity1'
-              scriptType: 'bash'
-              scriptLocation: 'inlineScript'
-              inlineScript: |
-                # Opret App Service Plan hvis den ikke eksisterer
-                plan_exists=$(az appservice plan list --resource-group DevSecOpsDemo --query "[?name=='DevSecOpsDemo-plan'].name" -o tsv)
-                if [ -z "$plan_exists" ]; then
-                  echo "App Service Plan eksisterer ikke - opretter den..."
-                  az appservice plan create \
-                    --name DevSecOpsDemo-plan \
-                    --resource-group DevSecOpsDemo \
-                    --sku F1 \
-                    --is-linux
-                else
-                  echo "App Service Plan eksisterer allerede - springer over..."
-                fi
-
-                # Opret Web App hvis den ikke eksisterer
-                app_exists=$(az webapp list --resource-group DevSecOpsDemo --query "[?name=='devsecops-demo-api'].name" -o tsv)
-                if [ -z "$app_exists" ]; then
-                  echo "Web App eksisterer ikke - opretter den..."
-                  az webapp create \
-                    --name devsecops-demo-api \
-                    --resource-group DevSecOpsDemo \
-                    --plan DevSecOpsDemo-plan \
-                    --runtime "PYTHON:3.11"
-                else
-                  echo "Web App eksisterer allerede - springer over..."
-                fi
           - task: AzureWebApp@1
+            displayName: 'Deploy til Azure App Service'
             inputs:
               azureSubscription: 'ManagedIdentity1'
               appType: 'webAppLinux'
