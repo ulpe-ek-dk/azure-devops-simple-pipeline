@@ -2,6 +2,8 @@ from flask import Flask, jsonify, request
 
 app = Flask(__name__)
 
+API_KEY = "sk-1234567890abcdefghijklmnopqrstuvwxyz"
+
 # Simpel in-memory database til demo
 vindmoeller = [
     {"id": 1, "navn": "Vestas 1", "MW": 1.8},

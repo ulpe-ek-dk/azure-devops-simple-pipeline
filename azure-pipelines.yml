@@ -27,7 +27,7 @@ stages:
         detect-secrets scan > .secrets.baseline
         detect-secrets audit .secrets.baseline
       displayName: 'Scan efter secrets'
-      continueOnError: true
+      continueOnError: false
 
 # ─────────────────────────────
 # STAGE 2: SAST
